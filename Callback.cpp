@@ -36,6 +36,13 @@ public:
 		t->FuncPtr();
 	}
 
+	template<class Target, class MemFunc>
+	void Call(Target* t, const MemFunc& memFtor)
+	{
+		assert(t != nullptr, "Invoker is null pointer");
+		t->(*memFtor)();
+	}
+
 protected:
 
 	FuncBase()
@@ -66,3 +73,10 @@ protected:
 
 	char m_MemberFunc[PTR_SIZE];
 };
+
+int main()
+{
+
+
+	return 0;
+}
