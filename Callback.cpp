@@ -23,7 +23,10 @@ public:
 	typedef void (DummyVirtualFuncBase::*MemberFunc)();
 	
 	void SetTarget(void* target) { m_Target = target; }
-	FuncPtr GetFunctor() { return m_Func; }
+
+	const char* GetMemFunc() const { return m_MemberFunc; }
+	void* GetTarget() const        { return m_Target; }
+	FuncPtr GetFunctor() const     { return m_Func; }
 
 protected:
 
@@ -36,12 +39,11 @@ protected:
 
 	FuncBase(const void* c, FuncPtr ftor, const void* memberFtor, size_t sz, bool targetAsParam = false)
 	{
-		assert(ftor != nullptr);
+		ZERO_MEM(m_MemberFunc, PTR_SIZE);
 
-		char* mf = (char*)memberFtor;
-
-		if (mf)
+		if (memberFtor)
 		{
+			char* mf = (char*)memberFtor;
 			for (size_t i = 0; i < PTR_SIZE; ++i)
 			{
 				m_MemberFunc[i] = mf[i];
@@ -49,9 +51,8 @@ protected:
 		}
 		else
 		{
-			//m_MemberFunc = nullptr;
+			m_Func = ftor;
 		}
-		m_Func = ftor;
 	}
 	
     //
@@ -73,37 +74,34 @@ class Func0 : public FuncBase
 public:
 	// Ctors in protected
 
-	void Call()
+	void Call() const
 	{
-		assert(m_Func != nullptr);
-		m_Thunk(*this, GetFunctor());
+		assert(m_Thunk);
+		m_Thunk(*this, GetTarget());
 	}
 
-	void operator()()
+	void operator()() const
 	{
+		assert(m_Thunk);
 		Call();
 	}
 
 	template<class Target>
 	void Call(Target* t)
 	{
-		assert(t != nullptr);
+		assert(m_Thunk);
+		assert(GetTarget() == nullptr);
 		m_Thunk(*this, t);
 	}
 
 	template<class Target>
 	void operator()(Target* t)
 	{
+		assert(m_Thunk);
+		assert(GetTarget() == nullptr);
 		Call(t);
 	}
 
-	template<class Target, class MemFunc>
-	void Call(Target* t, const MemFunc& memFtor)
-	{
-		assert(t != nullptr);
-		(t->*memFtor)();
-	}
-	
 	//
 	template<class Target, class MemFunc>
 	static Func0 MakeFuncTargetAsParam(Target* t, const MemFunc& memFtor)
@@ -128,26 +126,30 @@ protected:
 	// Internal static functions
 	//
 	template<class Func>
-	static void thunk_functor(Func func)
+	static void thunk_functor(const FuncBase& ftor, void* target)
 	{
-		(Func(*func))();
+		(Func(ftor.GetFunctor()))();
 	}
 
 	template<class Target, class MemFunc>
-	static void thunk_memberFunctor(const MemFunc& mftor, const void* target)
+	static void thunk_memberFunctor(const FuncBase& ftor, void* target)
 	{
 		Target* t = (Target*)target;
-		MemFunc& mf = (*(MemFunc*))(void*)(mftor);
+		MemFunc& mf = (*(MemFunc*)(void*)(ftor.GetMemFunc()));
 		(t->*mf)();
 	}
 
 	template<class Target, class MemFunc>
-	static void thunk_targetAsParam(const MemFunc& mftor, const void* target)
+	static void thunk_targetAsParam(const FuncBase& ftor, void* target)
 	{
-
+		Target* t = (Target*)target;
+		MemFunc& mf = (*(MemFunc*)(void*)(ftor.GetMemFunc()));
+		(*mf)(target);
 	}
 
-	typedef void (*Thunk)(const FuncBase&, const void*);
+
+	// Thunk
+	typedef void (*Thunk)(const FuncBase& ftor, void* target);
 
 	Func0(Thunk thunk, const void* c, FuncPtr ftor, const void* mf, size_t sz, bool targetAsParam = false) :
 		FuncBase(c, ftor, mf, sz, targetAsParam),
@@ -159,6 +161,20 @@ protected:
 	volatile Thunk m_Thunk;
 };
 
+//
+// No args with return value
+//
+template<class RT>
+class FuncRT0 : public FuncBase
+{
+public:
+
+protected:
+
+private:
+
+};
+
 
 //
 // Simple test case
@@ -168,7 +184,7 @@ class TestCase
 public:
 	void TestFunc0() 
 	{
-		//Func0::MakeFunc(this, &TestCase::LogFunc0).Call(); 
+		Func0::MakeFunc(this, &TestCase::LogFunc0).Call(); 
 	}
 
 
@@ -187,8 +203,8 @@ int main()
 	Func0 ftor0 = Func0::MakeFunc(test_func0);	
 	ftor0.Call();
 
-	//TestCase test;
-	//test.TestFunc0();
+	TestCase test;
+	test.TestFunc0();
 
 	return 0;
 }
