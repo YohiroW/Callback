@@ -1,8 +1,6 @@
+#ifndef _CALLBACK_H_
+#define _CALLBACK_H_
 #include <cassert>
-#include <thread>
-
-// For test
-#include <iostream>
 
 #define PTR_SIZE  sizeof(void*)
 #define MEMFUNC_SIZE  PTR_SIZE
@@ -19,14 +17,14 @@ class FuncBase
 public:
 	// Move ctor to protected, for FuncBase can not be instantiated
 
-	typedef void (*FuncPtr)();	
+	typedef void(*FuncPtr)();
 	typedef void (DummyVirtualFuncBase::*MemberFunc)();
-	
+
 	void SetTarget(void* target) { m_Target = target; }
 
 	const char* GetMemFunc() const { return m_MemberFunc; }
-	void* GetTarget() const        { return m_Target; }
-	FuncPtr GetFunctor() const     { return m_Func; }
+	void* GetTarget() const { return m_Target; }
+	FuncPtr GetFunctor() const { return m_Func; }
 
 protected:
 
@@ -54,8 +52,8 @@ protected:
 			m_Func = ftor;
 		}
 	}
-	
-    //
+
+	//
 	union
 	{
 		FuncPtr m_Func;
@@ -149,7 +147,7 @@ protected:
 
 
 	// Thunk
-	typedef void (*Thunk)(const FuncBase& ftor, void* target);
+	typedef void(*Thunk)(const FuncBase& ftor, void* target);
 
 	Func0(Thunk thunk, const void* c, FuncPtr ftor, const void* mf, size_t sz, bool targetAsParam = false) :
 		FuncBase(c, ftor, mf, sz, targetAsParam),
@@ -175,36 +173,4 @@ private:
 
 };
 
-
-//
-// Simple test case
-//
-class TestCase
-{
-public:
-	void TestFunc0() 
-	{
-		Func0::MakeFunc(this, &TestCase::LogFunc0).Call(); 
-	}
-
-
-private:
-	void LogFunc0()
-	{
-		std::cout << "Test Member Func0" << std::endl;
-	}
-};
-
-void test_func0() { std::cout << "Test Func0" << std::endl; }
-
-//Entry
-int main()
-{
-	Func0 ftor0 = Func0::MakeFunc(test_func0);	
-	ftor0.Call();
-
-	TestCase test;
-	test.TestFunc0();
-
-	return 0;
-}
+#endif
