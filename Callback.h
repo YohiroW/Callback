@@ -105,7 +105,7 @@ public:
 	template<class Target, class MemFunc>
 	static Func0 MakeFuncTargetAsParam(Target* t, const MemFunc& memFtor)
 	{
-		return Func0(thunk_targetAsParam<Target, MemFunc>, nullptr, (FuncPtr)ftor, nullptr, sizeof(MemFunc), true);
+		return Func0(thunk_targetAsParam<Target, MemFunc>, nullptr, (FuncPtr)memFtor, nullptr, sizeof(MemFunc), true);
 	}
 
 	template<class Target, class MemFunc>
@@ -202,7 +202,7 @@ public:
 	template<class Target, class MemFunc>
 	static FuncRT0<RT> MakeFuncTargetAsParam(Target* t, const MemFunc& memFtor)
 	{
-		return FuncRT0<RT>(thunk_targetAsParam<Target, MemFunc>, nullptr, (FuncPtr)ftor, nullptr, sizeof(MemFunc), true);
+		return FuncRT0<RT>(thunk_targetAsParam<Target, MemFunc>, nullptr, (FuncPtr)memFtor, nullptr, sizeof(MemFunc), true);
 	}
 
 	template<class Target, class MemFunc>
